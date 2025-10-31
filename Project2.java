@@ -1,5 +1,5 @@
 /* 
- * Name: <Your Name>
+ * Name: Kris Sy
  * Project: COMP482 Project 2
  *
  * Greedy approach:
