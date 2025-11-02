@@ -1,10 +1,11 @@
 /*  Name: Kris Sy COMP482 Project 2
  *
- *  1. Sort heights, then interleave largest, smallest, next largest, next smallest, etc.
- *     to form an initial arrangement with high loopyness
- *  2. Repeatedly apply improving pair swaps (local greedy hill-climb).
- *     Each swap is accepted only if it increases the loopyness. We compute the exact
- *     delta in O(1) by touching only edges around the swapped indices
+ *  Loopyness = sum of squared differences between adjacent heights
+ *  Goal: greedy alg to maximize loopyness (hn - h1)^2 + Sum(hi+1 - hi))^2 
+ *  
+ *  Approach?
+ *  1. Sort heights: largest, smallest, next largest, next smallest, etc. to form arrangement with high loopyness
+ *  2. Improve pair swaps locally. Each swap is accepted only if it increases the loopyness.
  */
 import java.io.*;
 import java.util.*;
@@ -12,7 +13,6 @@ import java.util.*;
 public class Project2 {
     public static void main(String[] args) throws Exception {
         
-        // Read input.txt from the current directory
         File inFile = new File("input.txt");
         
         try (Scanner sc = new Scanner(inFile)) {
@@ -27,7 +27,7 @@ public class Project2 {
                 a[i] = sc.nextLong();
             }
 
-            // Stage 1: build high–low alternating arrangement (good greedy starting point)
+            // Stage 1: build high–low alternating arrangement
             long[] start = highLowAlternating(a);
 
             // Stage 2: greedy hill-climb by pair swaps using O(1) delta scoring
@@ -44,7 +44,7 @@ public class Project2 {
                     for (int j = i + 1; j < n; j++) {
                         long gain = swapGain(best, bestScore, i, j);
                         if (gain > 0) {
-                            // Apply swap and update score
+                            // swap and update 
                             long tmp = best[i];
                             best[i] = best[j];
                             best[j] = tmp;
@@ -82,7 +82,7 @@ public class Project2 {
         return res;
     }
 
-    // Compute loopyness (sum of squared differences around the circle)
+    // Compute loopyness 
     private static long loopyness(long[] h) {
         
         long s = 0L;
@@ -97,8 +97,7 @@ public class Project2 {
 
     }
 
-    // Compute the gain (delta) in loopyness if we swap positions i and j (i < j).
-    // We only touch edges adjacent to i and j (with careful handling for adjacency and circular wrap).
+    // Compute the gain (delta) in loopyness if i and j are swapped (i < j).
     private static long swapGain(long[] h, long currentScore, int i, int j) {
         int n = h.length;
         if (i == j) return 0;
@@ -109,14 +108,14 @@ public class Project2 {
             return d * d;
         };
 
-        // Indices affected: (i-1,i), (i,i+1), (j-1,j), (j,j+1) in a circular sense.
+        // Indices around i and j (mod n)
         int im1 = (i - 1 + n) % n, ip1 = (i + 1) % n;
         int jm1 = (j - 1 + n) % n, jp1 = (j + 1) % n;
 
-        // Gather current contributions (avoid double counting same edge)
+        // avoid double counting same edge
         long before = 0;
         
-        // For i edges
+        // for i edges
         if (im1 != j) before += edge.apply(im1, i);
         if (ip1 != j) before += edge.apply(i, ip1);
 
@@ -124,7 +123,7 @@ public class Project2 {
         if (jm1 != i) before += edge.apply(jm1, j);
         if (jp1 != i) before += edge.apply(j, jp1);
 
-        // Now simulate the swap virtually by referring to values
+        // Values before swap
         long vi = h[i], vj = h[j];
 
         // After-swap contributions (treat i as holding vj, j as holding vi)
@@ -138,14 +137,12 @@ public class Project2 {
         if (jm1 != i) after += sq(h[jm1], vi);
         if (jp1 != i) after += sq(vi, h[jp1]);
 
-        // Special handling for edge case if i and j are adjacent (share an edge).
-        //  j == i+1 or i == j+1 (mod n). In those cases we have excluded the shared edge above,
-        // so we must add it exactly once.
+        // Special handling for edge case if i and j share an edge:
+        //  j == i+1 or i == j+1 (mod n) -- In those cases exclude the shared edge above
         boolean adjacent = (ip1 == j) || (jp1 == i);
         if (adjacent) {
             
-            // If i and j are neighbors, the single shared edge is (i -> j) in circle order if ip1==j,
-            // else (j -> i) if jp1==i. After the swap, this edge becomes the other direction with swapped values.
+            // shared edge before swap
             if (ip1 == j) {
                 
                 // before: (i -> j) = (h[j] - h[i])^2 ; after: (i[vj] -> j[vi]) = (vi - vj)^2
